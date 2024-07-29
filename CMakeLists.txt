@@ -6,6 +6,8 @@ project(kernel_comp)
 
 OPTION(BUILD_CUDA "Build cuda version" ON)
 OPTION(BUILD_HIP "Build hip version" OFF)
+OPTION(CUDA_ARCH "Set GPU arch for CUDA manually" "native")
+OPTION(HIP_ARCH "Set GPU arch for HIP manually" "")
 
 if (BUILD_CUDA)
 	enable_language(CUDA)
@@ -28,5 +30,7 @@ if (BUILD_HIP)
 
 	find_package(hip REQUIRED)
 	target_link_libraries(hip_benchmark PRIVATE hip::host)
-	#set_property(TARGET hip_benchmark PROPERTY HIP_ARCHITECTURES gfx90a)
+	if (not "${HIP_ARCH}" STREQUAL "")
+		set_property(TARGET hip_benchmark PROPERTY HIP_ARCHITECTURES ${HIP_ARCH})
+	endif()
 endif()
