@@ -30,7 +30,7 @@ if (BUILD_HIP)
 
 	find_package(hip REQUIRED)
 	target_link_libraries(hip_benchmark PRIVATE hip::host)
-	if (not "${HIP_ARCH}" STREQUAL "")
+	if (NOT "${HIP_ARCH}" STREQUAL "")
 		set_property(TARGET hip_benchmark PROPERTY HIP_ARCHITECTURES ${HIP_ARCH})
 	endif()
 endif()

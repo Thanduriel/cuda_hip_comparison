@@ -45,7 +45,7 @@ __global__ void atomicsKernel(FloatType* RESTRICT out, const FloatType* RESTRICT
 	const IndexType i = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const IndexType j = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	if (i > sizeX || j > sizeY){
+	if (i >= sizeX || j >= sizeY){
 		return;
 	}
 
@@ -156,8 +156,15 @@ void run_benchmark(IndexType sizeX, IndexType sizeY) {
 	cudaFree(out);
 }
 
-int main(){
-	run_benchmark(500, 500);
+int main(int argc, char** args){
+	IndexType sizeX = 500;
+	IndexType sizeY = 500;
+	if (argc > 2) {
+		sizeX = atoi(args[1]);
+		sizeY = atoi(args[2]);
+	}
+
+	run_benchmark(sizeX, sizeY);
 
 	return 0;
 }
