@@ -77,7 +77,7 @@ void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, Float
 	int maxBlockSize = 0;
     int minGridSize = 0;
 	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &maxBlockSize, kernel, 0, 0);
-	const unsigned blockDim = std::sqrt(maxBlockSize);
+	const unsigned blockDim = 16;//std::sqrt(maxBlockSize);
 	const dim3 threadsPerBlock(blockDim, blockDim);
 	const dim3 numBlocks((sizeX + blockDim-1) / blockDim, (sizeY + blockDim-1) / blockDim);
 

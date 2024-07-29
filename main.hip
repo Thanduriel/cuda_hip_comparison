@@ -149,8 +149,8 @@ void run_benchmark(IndexType sizeX, IndexType sizeY) {
 	hipMalloc(&arr, bytes);
 	hipMalloc(&out, bytes);
 
-	measureKernel("cuda naive", naiveKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
-	measureKernel("cuda atomics", atomicsKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
+	measureKernel("hip naive", naiveKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
+	measureKernel("hip atomics", atomicsKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
 	// naiveKernel
 	
 	hipFree(arr);

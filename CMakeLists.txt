@@ -27,6 +27,8 @@ if (BUILD_HIP)
 	enable_language(HIP)
 
 	add_executable(hip_benchmark "main.hip")
+	# all hip functions returning error codes are marked nodiscard
+	target_compile_options(hip_benchmark PUBLIC "-Wno-unused-result")
 
 	find_package(hip REQUIRED)
 	target_link_libraries(hip_benchmark PRIVATE hip::host)
