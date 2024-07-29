@@ -32,7 +32,7 @@ __global__ void naiveKernel(FloatType* RESTRICT out, const FloatType* RESTRICT a
 	const IndexType i = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const IndexType j = (blockIdx.y * blockDim.y) + threadIdx.y;
 
-	if (i > sizeX || j > sizeY){
+	if (i >= sizeX || j >= sizeY){
 		return;
 	}
 
