@@ -29,7 +29,7 @@ __device__ __host__ IndexType flatIdx(IndexType x, IndexType y, IndexType sizeX,
 	} 
 }
 
-__global__ void naiveKernel(RESTRICT FloatType* out, RESTRICT const FloatType* arr, IndexType sizeX, IndexType sizeY){
+__global__ void naiveKernel(FloatType* RESTRICT out, const FloatType* RESTRICT arr, IndexType sizeX, IndexType sizeY){
 	const IndexType i = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const IndexType j = (blockIdx.y * blockDim.y) + threadIdx.y;
 
@@ -37,12 +37,12 @@ __global__ void naiveKernel(RESTRICT FloatType* out, RESTRICT const FloatType* a
 		return;
 	}
 
-	for (IndexType k = 0; k < sizeX; ++k){
+	for (IndexType k = 0; k < sizeX; ++k) {
 		out[flatIdx(k, i, sizeX, sizeY)] += arr[flatIdx(i, j, sizeX, sizeY)];
 	}
 }
 
-__global__ void atomicsKernel(RESTRICT FloatType* out, RESTRICT const FloatType* arr, IndexType sizeX, IndexType sizeY){
+__global__ void atomicsKernel(FloatType* RESTRICT out, const FloatType* RESTRICT arr, IndexType sizeX, IndexType sizeY){
 	const IndexType i = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const IndexType j = (blockIdx.y * blockDim.y) + threadIdx.y;
 
@@ -50,8 +50,7 @@ __global__ void atomicsKernel(RESTRICT FloatType* out, RESTRICT const FloatType*
 		return;
 	}
 
-	for (IndexType k = 0; k < sizeX; ++k){
-	//	out[flatIdx(k, i, sizeX, sizeY)] += arr[flatIdx(i, j, sizeX, sizeY)];
+	for (IndexType k = 0; k < sizeX; ++k) {
 		atomicAdd(&out[flatIdx(k, i, sizeX, sizeY)], arr[flatIdx(i, j, sizeX, sizeY)]);
 	}
 }
@@ -60,7 +59,7 @@ __global__ void atomicsKernel(RESTRICT FloatType* out, RESTRICT const FloatType*
 std::pair<int, FloatType> compareResults(const FloatType* arr0, const FloatType* arr1, IndexType size) {
 	int numErrors = 0;
 	FloatType totalL1Error = 0.0;
-	for(IndexType i = 0; i < size; ++i){
+	for(IndexType i = 0; i < size; ++i) {
 		const FloatType err = std::abs(arr0[i] - arr1[i]);
 		if (err){
 			++numErrors;
