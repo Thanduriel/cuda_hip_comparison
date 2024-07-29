@@ -4,14 +4,28 @@ set(CMAKE_CXX_STANDARD 17)
 
 project(kernel_comp)
 
-enable_language(CUDA)
+OPTION(BUILD_CUDA "Build cuda version" ON)
+OPTION(BUILD_HIP "Build hip version" OFF)
 
-add_executable(kernel_benchmark "main.cu")
+if (BUILD_CUDA)
+	enable_language(CUDA)
 
-set(CUDA_ARCH "native")
-set_target_properties(kernel_benchmark PROPERTIES 
-		CUDA_ARCHITECTURES ${CUDA_ARCH} 
-		CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+	add_executable(cuda_benchmark "main.cu")
 
-find_package(CUDAToolkit REQUIRED)
-target_link_libraries(kernel_benchmark PRIVATE CUDA::toolkit)
+	set(CUDA_ARCH "native")
+	set_target_properties(cuda_benchmark PROPERTIES 
+			CUDA_ARCHITECTURES ${CUDA_ARCH} 
+			CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
+	find_package(CUDAToolkit REQUIRED)
+	target_link_libraries(cuda_benchmark PRIVATE CUDA::toolkit)
+endif()
+
+if (BUILD_HIP)
+	enable_language(HIP)
+
+	add_executable(hip_benchmark "main.hip.cpp")
+
+	find_package(hip REQUIRED)
+	target_link_libraries(hip_benchmark PRIVATE hip::host)
+endif()
