@@ -72,15 +72,17 @@ std::pair<int, FloatType> compareResults(const FloatType* arr0, const FloatType*
 }
 
 template<typename Kernel>
-void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, FloatType* out, const FloatType* hostInit, const FloatType* hostReference, IndexType sizeX, IndexType sizeY, int repeats = 512){
+void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, FloatType* out, const FloatType* hostInit, const FloatType* hostReference, IndexType sizeX, IndexType sizeY, int repeats, unsigned blockSize){
 	std::cout << name << "\n";
 	// determine block size
-	int maxBlockSize = 0;
-    int minGridSize = 0;
-	hipOccupancyMaxPotentialBlockSize(&minGridSize, &maxBlockSize, kernel, 0, 0);
-	const unsigned blockDim = std::sqrt(maxBlockSize);
-	const dim3 threadsPerBlock(blockDim, blockDim);
-	const dim3 numBlocks((sizeX + blockDim-1) / blockDim, (sizeY + blockDim-1) / blockDim);
+	if (!blockSize) {
+		int maxBlockSize = 0;
+		int minGridSize = 0;
+		hipOccupancyMaxPotentialBlockSize(&minGridSize, &maxBlockSize, kernel, 0, 0);
+		blockSize = std::sqrt(maxBlockSize);
+	}
+	const dim3 threadsPerBlock(blockSize, blockSize);
+	const dim3 numBlocks((sizeX + blockSize-1) / blockSize, (sizeY + blockSize-1) / blockSize);
 
 	std::cout << "block size: " << threadsPerBlock.x << " x " << threadsPerBlock.y 
 		<< ", grid size: " << numBlocks.x << " x " << numBlocks.y << std::endl;
@@ -119,7 +121,7 @@ void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, Float
 }
 
 //template<typename T> 
-void run_benchmark(IndexType sizeX, IndexType sizeY) {
+void run_benchmark(IndexType sizeX, IndexType sizeY, int repeats, unsigned blockSize) {
 	const IndexType numEl = sizeX * sizeY;
 	// prepare input data
 	std::vector<FloatType> hostBuf(numEl, 0.0);
@@ -149,8 +151,8 @@ void run_benchmark(IndexType sizeX, IndexType sizeY) {
 	hipMalloc(&arr, bytes);
 	hipMalloc(&out, bytes);
 
-	measureKernel("hip naive", naiveKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
-	measureKernel("hip atomics", atomicsKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
+	measureKernel("hip naive", naiveKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY, repeats, blockSize);
+	measureKernel("hip atomics", atomicsKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY, repeats, blockSize);
 	// naiveKernel
 	
 	hipFree(arr);
@@ -163,6 +165,16 @@ int main(int argc, char** args){
 	if (argc > 2) {
 		sizeX = atoi(args[1]);
 		sizeY = atoi(args[2]);
+	}
+
+	int repeats = 500;
+	if (argc > 3) {
+		repeats = atoi(args[3]);
+	}
+
+	unsigned blockSize = 16;
+	if (argc > 4) {
+		blockSize = atoi(args[4]);
 	}
 
 	run_benchmark(sizeX, sizeY);

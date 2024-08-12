@@ -11,7 +11,7 @@ using IndexType = uint32_t;
 // julia is column major
 constexpr bool COLUMN_MAJOR = true;
 // prevent aliasing
-#define WITH_RESTRICT
+//#define WITH_RESTRICT
 #ifdef WITH_RESTRICT
 #define RESTRICT __restrict__
 #else
@@ -71,15 +71,17 @@ std::pair<int, FloatType> compareResults(const FloatType* arr0, const FloatType*
 }
 
 template<typename Kernel>
-void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, FloatType* out, const FloatType* hostInit, const FloatType* hostReference, IndexType sizeX, IndexType sizeY, int repeats = 512){
+void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, FloatType* out, const FloatType* hostInit, const FloatType* hostReference, IndexType sizeX, IndexType sizeY, int repeats, unsigned blockSize){
 	std::cout << name << "\n";
 	// determine block size
-	int maxBlockSize = 0;
-    int minGridSize = 0;
-	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &maxBlockSize, kernel, 0, 0);
-	const unsigned blockDim = 16;//std::sqrt(maxBlockSize);
-	const dim3 threadsPerBlock(blockDim, blockDim);
-	const dim3 numBlocks((sizeX + blockDim-1) / blockDim, (sizeY + blockDim-1) / blockDim);
+	if (!blockSize) {
+		int maxBlockSize = 0;
+		int minGridSize = 0;
+		cudaOccupancyMaxPotentialBlockSize(&minGridSize, &maxBlockSize, kernel, 0, 0);
+		blockSize = std::sqrt(maxBlockSize);
+	}
+	const dim3 threadsPerBlock(blockSize, blockSize);
+	const dim3 numBlocks((sizeX + blockSize-1) / blockSize, (sizeY + blockSize-1) / blockSize);
 
 	std::cout << "block size: " << threadsPerBlock.x << " x " << threadsPerBlock.y 
 		<< ", grid size: " << numBlocks.x << " x " << numBlocks.y << std::endl;
@@ -118,7 +120,7 @@ void measureKernel(const std::string& name, Kernel kernel, FloatType* arr, Float
 }
 
 //template<typename T> 
-void run_benchmark(IndexType sizeX, IndexType sizeY) {
+void run_benchmark(IndexType sizeX, IndexType sizeY, int repeats, unsigned blockSize) {
 	const IndexType numEl = sizeX * sizeY;
 	// prepare input data
 	std::vector<FloatType> hostBuf(numEl, 0.0);
@@ -148,8 +150,8 @@ void run_benchmark(IndexType sizeX, IndexType sizeY) {
 	cudaMalloc(&arr, bytes);
 	cudaMalloc(&out, bytes);
 
-	measureKernel("cuda naive", naiveKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
-	measureKernel("cuda atomics", atomicsKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY);
+	measureKernel("cuda naive", naiveKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY, repeats, blockSize);
+	measureKernel("cuda atomics", atomicsKernel, arr, out, hostBuf.data(), resultCPU.data(), sizeX, sizeY, repeats, blockSize);
 	// naiveKernel
 	
 	cudaFree(arr);
@@ -164,7 +166,17 @@ int main(int argc, char** args){
 		sizeY = atoi(args[2]);
 	}
 
-	run_benchmark(sizeX, sizeY);
+	int repeats = 500;
+	if (argc > 3) {
+		repeats = atoi(args[3]);
+	}
+
+	unsigned blockSize = 16;
+	if (argc > 4) {
+		blockSize = atoi(args[4]);
+	}
+
+	run_benchmark(sizeX, sizeY, repeats, blockSize);
 
 	return 0;
 }
